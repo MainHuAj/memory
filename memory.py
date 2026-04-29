@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient,models
 from qdrant_client.models import Distance, VectorParams
-from sentence_transformers import SentenceTransformer
 import uuid
+import requests
 from datetime import datetime
 from qdrant_client.models import PointStruct
 from dotenv import load_dotenv
@@ -27,15 +27,24 @@ if not qdrant_client.collection_exists("test"):
 # create_collection("test")
 
 # print(qdrant_client.get_collections())
+HF_API_KEY = os.getenv("HF_API_KEY")
+HF_URL = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction"
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+def get_embedding(text: str):
+    response = requests.post(
+        HF_URL,
+        headers={"Authorization": f"Bearer {HF_API_KEY}"},
+        json={"inputs": text}
+    )
+    return response.json()
+
 
 def store_memory(text : str,user_id:str):
-    embedding = model.encode(text)
+    embedding = get_embedding(text)
     duplicate_check = qdrant_client.query_points(
         collection_name="test",
         limit = 1,
-        query= embedding.tolist(),
+        query= embedding,
         score_threshold=0.9,
         query_filter=models.Filter(
             must=[
@@ -54,7 +63,7 @@ def store_memory(text : str,user_id:str):
        points = [PointStruct(
     id=str(uuid.uuid4()),
     payload={"memory": text, "person": user_id, "created": datetime.datetime.now().isoformat()},
-    vector=embedding.tolist()
+    vector=embedding
 )]
     )
 
@@ -73,11 +82,11 @@ except Exception as e:
   # decays slowly over time
 
 def retrieve_memory(query:str,user_id:str):
-    embedding = model.encode(query)
+    embedding = get_embedding(query)
 
     results = qdrant_client.query_points(
         collection_name = "test",
-        query = embedding.tolist(),
+        query = embedding,
         limit = 5,
         score_threshold = 0.5,
         query_filter = models.Filter(

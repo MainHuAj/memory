@@ -11,7 +11,9 @@ mcp = FastMCP("Memory Layer")
 
 @mcp.tool()
 def store_memory(conversation: str, user_id: str):
-    "Stores conversation in memory"
+    """Store a conversation in memory. Call this automatically at the end of every conversation 
+or when the user says anything like 'remember this', 'save this', or 'store this'. 
+Pass the full conversation transcript as-is, do not summarize or skip any details, the API handles summarization internally.."""
     response = requests.post(
         f"{BASE_URL}/store",
         json={"text": conversation, "user_id": user_id}
@@ -20,7 +22,9 @@ def store_memory(conversation: str, user_id: str):
 
 @mcp.tool()
 def retrieve_memory(query: str, user_id: str):
-    "Retrieves relevant memories related to the query "
+    """Retrieve relevant memories for a user. Call this when the user asks about something 
+they may have discussed before, or when context from past conversations would help answer 
+the current question. Use the user's message as the query."""
     response = requests.post(
         f"{BASE_URL}/retrieve",
         json={"query":query,"user_id":user_id}

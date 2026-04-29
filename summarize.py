@@ -13,6 +13,7 @@ Your job is to extract SPECIFIC, DETAILED facts that would be useful to remember
 Rules for extracting facts:
 - Facts must be specific, not vague. BAD: "User is building a project". GOOD: "User is building a memory layer for LLMs deployed on Railway"
 - Never use markdown formatting in facts, write plain text only
+- Never skip important facts like URLs, tool names, decisions made, or specific technical details
 - Include specific names, URLs, tools, decisions, and preferences mentioned
 - Each fact should be a complete, standalone sentence that makes sense without context
 - Extract 3-8 facts depending on conversation length
@@ -28,6 +29,7 @@ Return ONLY a JSON object, no preamble, no markdown backticks:
   "category": "technical/personal/professional/general",
   "importance": 0.8
 }}
+Do not wrap the JSON in markdown code blocks. Do not add any text before or after the JSON. Start your response with {{ and end with }}.
 
 Conversation:
 {conversation}'''

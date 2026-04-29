@@ -62,7 +62,7 @@ def store_memory(text : str,user_id:str):
         collection_name="test",
        points = [PointStruct(
     id=str(uuid.uuid4()),
-    payload={"memory": text, "person": user_id, "created": datetime.datetime.now().isoformat()},
+    payload={"memory": text, "person": user_id, "created": datetime.now().isoformat()},
     vector=embedding
 )]
     )

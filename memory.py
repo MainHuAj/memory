@@ -88,7 +88,7 @@ def retrieve_memory(query:str,user_id:str):
         collection_name = "test",
         query = embedding,
         limit = 5,
-        score_threshold = 0.5,
+        score_threshold = 0.3,
         query_filter = models.Filter(
             must =[
                 models.FieldCondition(

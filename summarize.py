@@ -18,6 +18,7 @@ Rules for extracting facts:
 - Each fact should be a complete, standalone sentence that makes sense without context
 - Extract 3-8 facts depending on conversation length
 - importance should reflect how significant/useful this info will be in future (0.1 = trivial, 1.0 = critical)
+CRITICAL: All string values in the JSON must be wrapped in double quotes. Return only valid JSON that can be parsed by json.loads().
 
 Return ONLY a JSON object, no preamble, no markdown backticks:
 {{
@@ -41,11 +42,16 @@ Conversation:
         "content": prompt
       }
     ],
-    temperature=0.8,
+    temperature=0.1,
     max_completion_tokens=8192
 )
+
     try:
-        result = json.loads(completion.choices[0].message.content)
+        # result = json.loads(completion.choices[0].message.content)
+        # return result
+        raw = completion.choices[0].message.content
+        # print("RAW RESPONSE:", raw)
+        result = json.loads(raw)
         return result
     except Exception as e:
         print(e)
@@ -61,4 +67,4 @@ Assistant: What model are you using for embeddings?
 User: all-MiniLM-L6-v2, 384 dimensions, and I am using Groq with LLaMA 3.3 70B for fact extraction
 """
 
-print(extract_facts(test_conversation))
+# print(extract_facts(test_conversation))

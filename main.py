@@ -4,26 +4,33 @@ from pydantic import BaseModel,Field
 from memory import store_memory,retrieve_memory,delete_memory,get_memories,qdrant_client
 from summarize import extract_facts
 from typing import Union
+from fastapi import Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from auth import get_current_user,supabase
+security = HTTPBearer()
 
 
 app = FastAPI()
 
 class StoreRequest(BaseModel):
     text: str = Field(..., min_length=10, max_length=50000)
-    user_id: str = Field(..., min_length=3, max_length=50)
+    
    
 class RetrieveRequest(BaseModel):
     query: str = Field(..., min_length=3, max_length=500)
-    user_id: str = Field(..., min_length=3, max_length=50)
 
 @app.post("/store")
-def store(request:StoreRequest):
-
+def store(request:StoreRequest,credentials: HTTPAuthorizationCredentials = Depends(security)):
+    
     try:
+        user_id = get_current_user(credentials.credentials)
         result = extract_facts(request.text)
+        print("RESULT:", result)
+        importance = result['importance']
+        print("IMPORTANCE:", importance)
         for fact in result["facts"]:
-            store_memory(fact,request.user_id)
-        store_memory(result["summary"],request.user_id)
+            store_memory(fact,importance,user_id)
+        store_memory(result["summary"],importance,user_id)
         return {"message": "memory stored successfully"}
     except Exception as e:
        print(e)
@@ -38,9 +45,11 @@ def store(request:StoreRequest):
 
 
 @app.post("/retrieve")
-def retrieve(request:RetrieveRequest):
+def retrieve(request:RetrieveRequest,credentials: HTTPAuthorizationCredentials = Depends(security)):
+   
     try:
-        retrieved_memory = retrieve_memory(request.query,request.user_id)
+        user_id = get_current_user(credentials.credentials)
+        retrieved_memory = retrieve_memory(request.query,user_id)
         return [r.payload['memory'] for r in retrieved_memory]
     except Exception as e:
         print(e)
@@ -50,8 +59,9 @@ def retrieve(request:RetrieveRequest):
         )
 
 @app.delete("/delete/{memory_id}")
-def delete(user_id:str,memory_id:str):
+def delete(memory_id:str,credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
+        user_id = get_current_user(credentials.credentials)
         delete_memory(user_id,memory_id)
         return {"message":"memory deleted successfully"}
     except Exception as e:
@@ -64,9 +74,10 @@ def delete(user_id:str,memory_id:str):
             raise HTTPException(status_code=500, detail="Something went wrong")
             
 
-@app.get("/memories/{user_id}")
-def memories(user_id :str,limit:int = 10,offset :Union[int,str] = 0):
+@app.get("/memories")
+def memories(limit:int = 10,offset :Union[int,str] = 0,credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
+        user_id = get_current_user(credentials.credentials)
         points , next_offset = get_memories(user_id,limit,offset)
         return {
         "memories": [{"memory": p.payload["memory"], "id": p.id} for p in points],
@@ -92,3 +103,36 @@ def health():
             detail="Service unavailable"
         )
 
+
+
+class SignUpRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/signup")
+def signup(request:SignUpRequest):
+    try:
+        response = supabase.auth.sign_up({"email": request.email, "password": request.password})
+        return {"user":response.user.email,"session":response.session}
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail= "Error Signing Up"
+        )
+
+@app.post("/login")
+def login(request:LoginRequest):
+    try:
+        response = supabase.auth.sign_in_with_password({"email": request.email, "password": request.password})
+        return {"user":response.user.email,"session":response.session}
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Username or Password invalid"
+        )

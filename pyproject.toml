@@ -11,6 +11,7 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "qdrant-client>=1.17.1",
     "requests>=2.33.1",
+    "supabase>=2.29.0",
     "uuid>=1.30",
     "uvicorn>=0.45.0",
 ]

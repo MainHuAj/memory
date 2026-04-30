@@ -39,7 +39,7 @@ def get_embedding(text: str):
     return response.json()
 
 
-def store_memory(text : str,user_id:str):
+def store_memory(text : str,importance:float,user_id:str):
     embedding = get_embedding(text)
     duplicate_check = qdrant_client.query_points(
         collection_name="test",
@@ -62,7 +62,7 @@ def store_memory(text : str,user_id:str):
         collection_name="test",
        points = [PointStruct(
     id=str(uuid.uuid4()),
-    payload={"memory": text, "person": user_id, "created": datetime.now().isoformat()},
+    payload={"memory": text, "person": user_id,"importance":importance, "created": datetime.now().isoformat()},
     vector=embedding
 )]
     )

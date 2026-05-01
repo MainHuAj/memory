@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemoryLayer - Give Your AI a Memory</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #0a0a0a;
+            --accent-color: #4f46e5;
+            --accent-hover: #4338ca;
+            --secondary-color: #7c3aed;
+            --section-bg: #f8f8f8;
+            --code-bg: #f4f4f5;
+            --warning-bg: #fffbeb;
+            --warning-border: #fef3c7;
+            --warning-text: #b45309;
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
+            --border-radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        /* Animations */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Utility */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .label {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            display: block;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            border: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 1px solid #e5e5e5;
+        }
+
+        .btn-outline:hover {
+            background-color: var(--section-bg);
+            border-color: #d4d4d4;
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid #eaeaea;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--accent-color);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: #4a4a4a;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-color);
+        }
+
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background-color: var(--text-color);
+            margin-bottom: 4px;
+            transition: 0.3s;
+        }
+
+        .hamburger span:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 160px 0 100px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.5;
+            z-index: -2;
+        }
+
+        .hero-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(79, 70, 229, 0.08) 0%, rgba(255,255,255,0) 70%);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 32px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            margin-bottom: 24px;
+            color: var(--text-color);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #4b5563;
+            max-width: 680px;
+            margin: 0 auto 40px;
+        }
+
+        .hero-btns {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        /* Problem Section */
+        .problem {
+            padding: 100px 0;
+            background-color: var(--section-bg);
+            border-top: 1px solid #eaeaea;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            font-size: 1.125rem;
+            color: #4b5563;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .comparison-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: var(--border-radius);
+            padding: 32px;
+            box-shadow: var(--shadow-card);
+            border-top: 4px solid #e5e5e5;
+        }
+
+        .card-bad { border-top-color: #ef4444; }
+        .card-good { border-top-color: #06b6d4; }
+
+        .card-title {
+            font-weight: 700;
+            margin-bottom: 24px;
+            font-size: 1.25rem;
+        }
+
+        .chat-msg {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+        }
+
+        .msg-user {
+            background-color: #f3f4f6;
+            margin-left: 24px;
+            color: #1f2937;
+        }
+
+        .msg-ai {
+            background-color: #eef2ff;
+            margin-right: 24px;
+            color: #3730a3;
+            border: 1px solid #e0e7ff;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 100px 0;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+
+        .step-card {
+            background: #ffffff;
+            border: 1px solid #eaeaea;
+            border-radius: var(--border-radius);
+            padding: 32px;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .step-card:hover {
+            box-shadow: var(--shadow-card);
+            transform: translateY(-2px);
+        }
+
+        .step-num {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #9ca3af;
+            margin-bottom: 16px;
+            font-family: var(--font-mono);
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+            color: var(--accent-color);
+        }
+
+        .step-card p {
+            color: #4b5563;
+            font-size: 0.95rem;
+        }
+
+        /* Features */
+        .features {
+            padding: 100px 0;
+            background-color: var(--section-bg);
+            border-top: 1px solid #eaeaea;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .feature-item {
+            background: #ffffff;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            border: 1px solid #eaeaea;
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-item p {
+            color: #4b5563;
+            font-size: 0.9rem;
+        }
+
+        /* Setup Guide */
+        .setup {
+            padding: 100px 0;
+        }
+
+        .timeline {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .setup-step {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 48px;
+            position: relative;
+        }
+
+        .setup-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 40px;
+            bottom: -30px;
+            left: 19px;
+            width: 2px;
+            background-color: #e5e7eb;
+        }
+
+        .step-number-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .step-content {
+            padding-top: 8px;
+            width: 100%;
+        }
+
+        .step-content h3 {
+            margin-bottom: 12px;
+            font-size: 1.25rem;
+        }
+
+        .step-content p {
+            color: #4b5563;
+            margin-bottom: 16px;
+        }
+        
+        .step-note {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 16px;
+        }
+
+        .step-warning-note {
+            display: block;
+            margin-top: 12px;
+            padding: 12px;
+            background: #fffbeb;
+            border-radius: 6px;
+            border: 1px solid #fef3c7;
+            color: #b45309;
+            font-size: 0.875rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            margin-top: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tab-buttons {
+            display: flex;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            font-family: var(--font-sans);
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #6b7280;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+            background: #ffffff;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 16px;
+            background: #ffffff;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-content code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+        }
+
+        /* Code Blocks */
+        .code-container {
+            position: relative;
+            background: var(--code-bg);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .code-container pre {
+            padding: 24px 16px 16px;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .code-container pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: #4b5563;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .copy-btn:hover {
+            background: #f3f4f6;
+            color: var(--text-color);
+        }
+
+        /* Warning Banner */
+        .warning-banner {
+            background-color: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            color: var(--warning-text);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            margin: 0 auto 64px;
+            max-width: 800px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        /* Signup Section */
+        .signup {
+            padding: 100px 0;
+            background: var(--section-bg);
+            border-top: 1px solid #eaeaea;
+        }
+
+        .signup-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: center;
+        }
+        
+        .signup-info h2 {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+        
+        .signup-info p {
+            font-size: 1.1rem;
+            color: #4b5563;
+        }
+
+        .signup-form {
+            background: #ffffff;
+            padding: 32px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-card);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 24px;
+        }
+
+        .btn-submit:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-submit:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .form-message {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .form-message.success {
+            display: block;
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .form-message.error {
+            display: block;
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .login-hint {
+            margin-top: 24px;
+            font-size: 0.875rem;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        /* Footer */
+        footer {
+            background: #ffffff;
+            padding: 48px 0;
+            border-top: 1px solid #eaeaea;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a {
+            color: #4b5563;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-color);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.875rem;
+            padding-top: 24px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .hero h1 { font-size: 3.5rem; }
+            .comparison-cards, .steps-grid, .features-grid, .signup-container {
+                grid-template-columns: 1fr;
+            }
+            .signup-container {
+                gap: 32px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 72px;
+                left: 0;
+                right: 0;
+                background: #ffffff;
+                flex-direction: column;
+                padding: 24px;
+                border-bottom: 1px solid #eaeaea;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+            
+            .nav-links.active {
+                display: flex;
+            }
+
+            .hamburger { display: block; }
+            .hero h1 { font-size: 2.5rem; }
+            .hero { padding: 120px 0 60px; }
+            .timeline { padding-left: 16px; }
+            .footer-content {
+                flex-direction: column;
+                gap: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Navbar -->
+    <nav>
+        <div class="container nav-container">
+            <a href="#" class="logo">MEMORYLAYER</a>
+            <div class="nav-links">
+                <a href="#how-it-works">How it works</a>
+                <a href="#setup">Setup</a>
+                <a href="https://github.com/MainHuAj/memory" target="_blank" rel="noopener">GitHub</a>
+                <a href="#signup" class="btn btn-primary" style="padding: 8px 16px;">Get Started</a>
+            </div>
+            <button class="hamburger" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 2. Hero -->
+    <section class="hero">
+        <div class="hero-glow"></div>
+        <div class="container">
+            <div class="badge fade-in-up">
+                <div class="dot"></div>
+                Open Source · Free · Claude Native
+            </div>
+            <h1 class="fade-in-up">Give Your AI Memory.</h1>
+            <p class="fade-in-up">MemoryLayer stores your conversations and retrieves relevant context automatically — so your AI never forgets who you are.</p>
+            <div class="hero-btns fade-in-up">
+                <a href="#signup" class="btn btn-primary">Get Started Free</a>
+                <a href="https://github.com/MainHuAj/memory" target="_blank" rel="noopener" class="btn btn-outline">View on GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Problem Section -->
+    <section id="problem" class="problem">
+        <div class="container">
+            <div class="section-header fade-in-up">
+                <span class="label">THE PROBLEM</span>
+                <h2>Every conversation starts from zero.</h2>
+                <p>Every time you open a new chat with Claude — it has no idea who you are, what you're working on, or what you discussed yesterday. You repeat yourself, constantly.</p>
+            </div>
+            
+            <div class="comparison-cards fade-in-up">
+                <div class="card card-bad">
+                    <div class="card-title">Without MemoryLayer</div>
+                    <div class="chat-msg msg-user">
+                        Hi, I'm working on the React task manager app again. Remember the state management approach we decided on yesterday?
+                    </div>
+                    <div class="chat-msg msg-ai">
+                        Hello! I don't have access to past conversations. Could you please explain what state management approach you are referring to, and provide the context for your React task manager app?
+                    </div>
+                </div>
+                
+                <div class="card card-good">
+                    <div class="card-title">With MemoryLayer</div>
+                    <div class="chat-msg msg-user">
+                        Hi, continuing from yesterday. Let's build the next component.
+                    </div>
+                    <div class="chat-msg msg-ai">
+                        Welcome back! I see we are building the Kanban board for the React task manager using Zustand for state management and Tailwind for styling. What component would you like to tackle next?
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. How It Works -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <div class="section-header fade-in-up">
+                <span class="label">HOW IT WORKS</span>
+                <h2>Three steps. Permanent memory.</h2>
+            </div>
+            
+            <div class="steps-grid fade-in-up">
+                <div class="step-card">
+                    <div class="step-num">01</div>
+                    <h3 class="step-title">STORE</h3>
+                    <p>Tell Claude "save this to memory." MemoryLayer extracts key facts using LLaMA 3.3 70B and stores them as searchable vectors.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">02</div>
+                    <h3 class="step-title">RETRIEVE</h3>
+                    <p>Ask anything next session. MemoryLayer finds the most relevant memories and injects them automatically.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">03</div>
+                    <h3 class="step-title">REMEMBER</h3>
+                    <p>Your AI now knows your projects, preferences, and history — across every session.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Features -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header fade-in-up">
+                <span class="label">FEATURES</span>
+                <h2>Built to actually work.</h2>
+            </div>
+            
+            <div class="features-grid fade-in-up">
+                <div class="feature-item">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">Fact Extraction</h3>
+                    <p>Conversations distilled into specific searchable facts using LLaMA 3.3 70B</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-title">Semantic Search</h3>
+                    <p>Memories retrieved by meaning not keywords</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">⏱️</div>
+                    <h3 class="feature-title">Time Decay</h3>
+                    <p>Recent memories rank higher, old ones fade</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔐</div>
+                    <h3 class="feature-title">Secure Auth</h3>
+                    <p>Every user has isolated memory space via Supabase</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔁</div>
+                    <h3 class="feature-title">Duplicate Detection</h3>
+                    <p>Similarity above 90% is detected and skipped</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="feature-title">Claude Native</h3>
+                    <p>Works with Claude Desktop via MCP protocol out of the box</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Setup Guide -->
+    <section id="setup" class="setup">
+        <div class="container">
+            <div class="section-header fade-in-up">
+                <span class="label">SETUP GUIDE</span>
+                <h2>Get started in 5 minutes.</h2>
+            </div>
+            
+            <div class="timeline">
+                
+                <div class="setup-step fade-in-up">
+                    <div class="step-number-circle">1</div>
+                    <div class="step-content">
+                        <h3>Create your account</h3>
+                        <p>Sign up at the bottom of this page. Remember your email and password — you will need to manually enter them in the Claude Desktop config file in Step 4. There is no dashboard or login page.</p>
+                    </div>
+                </div>
+
+                <div class="setup-step fade-in-up">
+                    <div class="step-number-circle">2</div>
+                    <div class="step-content">
+                        <h3>Download the MCP server file</h3>
+                        <p>Download <code>mcp_server.py</code> from the GitHub repo and save it anywhere on your computer. Note the full file path — you will need it in Step 4.</p>
+                        <a href="https://github.com/MainHuAj/memory" target="_blank" rel="noopener" class="btn btn-outline" style="margin-top: 8px;">Download mcp_server.py from GitHub</a>
+                    </div>
+                </div>
+
+                <div class="setup-step fade-in-up">
+                    <div class="step-number-circle">3</div>
+                    <div class="step-content">
+                        <h3>Find your Claude Desktop config file</h3>
+                        <p>Open the config file in any text editor. The location depends on your OS:</p>
+                        
+                        <div class="tabs">
+                            <div class="tab-buttons">
+                                <button class="tab-btn active" data-target="os-mac">macOS</button>
+                                <button class="tab-btn" data-target="os-win-exe">Windows (.exe)</button>
+                                <button class="tab-btn" data-target="os-win-store">Windows (Store)</button>
+                            </div>
+                            
+                            <div class="tab-content active" id="os-mac">
+                                macOS: Path is <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>. To open the folder run: <code>open ~/Library/Application\ Support/Claude/</code> in Terminal.
+                            </div>
+                            
+                            <div class="tab-content" id="os-win-exe">
+                                Windows (.exe installer): Press Win+R, type <code>%APPDATA%\Claude\</code> and hit Enter. Open <code>claude_desktop_config.json</code>.
+                            </div>
+                            
+                            <div class="tab-content" id="os-win-store">
+                                Windows (Microsoft Store): Press Win+R, type <code>%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\</code> and hit Enter. Open <code>claude_desktop_config.json</code>.
+                                <span class="step-warning-note">⚠️ Microsoft Store installs have two config files. Claude reads from LocalCache\Roaming, NOT from %APPDATA%\Claude. Use the path above.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-step fade-in-up">
+                    <div class="step-number-circle">4</div>
+                    <div class="step-content">
+                        <h3>Add MemoryLayer to your config</h3>
+                        <p>Paste this into your <code>claude_desktop_config.json</code>. Replace <code>/path/to/mcp_server.py</code> with the actual full path of the file you downloaded in Step 2. Use the exact email and password you signed up with.</p>
+                        
+                        <div class="tabs">
+                            <div class="tab-buttons">
+                                <button class="tab-btn active" data-target="config-mac">macOS (uv)</button>
+                                <button class="tab-btn" data-target="config-all">All platforms (python)</button>
+                            </div>
+                            
+                            <div class="tab-content active" id="config-mac">
+                                <div class="code-container">
+                                    <button class="copy-btn">Copy</button>
+                                    <pre><code>{
+  "mcpServers": {
+    "Memory-Layer": {
+      "command": "/Library/Frameworks/Python.framework/Versions/3.13/bin/uv",
+      "args": [
+        "run", "--with", "fastmcp",
+        "--with", "requests",
+        "--with", "python-dotenv",
+        "fastmcp", "run",
+        "/path/to/mcp_server.py"
+      ],
+      "env": {
+        "MEMORY_EMAIL": "your@email.com",
+        "MEMORY_PASSWORD": "yourpassword",
+        "RAILWAY_URL": "https://memory-production-d533.up.railway.app"
+      }
+    }
+  }
+}</code></pre>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-content" id="config-all">
+                                <div class="code-container">
+                                    <button class="copy-btn">Copy</button>
+                                    <pre><code>{
+  "mcpServers": {
+    "Memory-Layer": {
+      "command": "python",
+      "args": ["/path/to/mcp_server.py"],
+      "env": {
+        "MEMORY_EMAIL": "your@email.com",
+        "MEMORY_PASSWORD": "yourpassword",
+        "RAILWAY_URL": "https://memory-production-d533.up.railway.app"
+      }
+    }
+  }
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="step-note">Replace <code>/path/to/mcp_server.py</code> with the actual full file path where you saved mcp_server.py in Step 2. For example: <code>/Users/yourname/Documents/mcp_server.py</code> on Mac or <code>C:\Users\yourname\Documents\mcp_server.py</code> on Windows.</p>
+                        <p class="step-note">The uv option automatically installs all dependencies. If using the python option, you must install dependencies first by running: <code>pip install fastmcp requests python-dotenv</code></p>
+                    </div>
+                </div>
+
+                <div class="setup-step fade-in-up">
+                    <div class="step-number-circle">5</div>
+                    <div class="step-content">
+                        <h3>Restart Claude Desktop</h3>
+                        <p>Fully quit and reopen Claude Desktop — don't just close the window.</p>
+                        <ul>
+                            <li style="margin-left: 20px; color: #4b5563; margin-bottom: 8px;"><strong>macOS:</strong> Right-click Claude in the Dock → Quit, then reopen</li>
+                            <li style="margin-left: 20px; color: #4b5563; margin-bottom: 16px;"><strong>Windows:</strong> Right-click Claude in the system tray → Quit, then reopen</li>
+                        </ul>
+                        <p>The Memory-Layer tools will appear in your conversation toolbar after restart.</p>
+                    </div>
+                </div>
+
+                <div class="setup-step fade-in-up">
+                    <div class="step-number-circle">6</div>
+                    <div class="step-content">
+                        <h3>Start using it</h3>
+                        
+                        <div class="code-container">
+                            <button class="copy-btn">Copy</button>
+                            <pre><code>Save this conversation to memory</code></pre>
+                        </div>
+                        
+                        <div class="code-container">
+                            <button class="copy-btn">Copy</button>
+                            <pre><code>What do you know about me? Load from memory.</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="warning-banner fade-in-up">
+                <div style="font-size: 1.25rem;">⚠️</div>
+                <div>
+                    <strong>Privacy Notice:</strong> Do not send sensitive personal information, passwords, financial data, or confidential business data to MemoryLayer. Conversations are processed by Groq and HuggingFace for fact extraction and stored in Qdrant Cloud.
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- 8. Signup Section -->
+    <section id="signup" class="signup">
+        <div class="container">
+            <span class="label fade-in-up" style="text-align: center;">GET STARTED</span>
+            
+            <div class="signup-container fade-in-up">
+                <div class="signup-info">
+                    <h2>Create your free account.</h2>
+                    <p>Sign up with your email and password. Remember what you enter here — you will manually type this email and password into the Claude Desktop config file in Step 4 of the setup guide.</p>
+                </div>
+                
+                <div class="signup-form">
+                    <form id="signup-form">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" required placeholder="you@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" required placeholder="Create a strong password">
+                        </div>
+                        <button type="submit" class="btn-submit">
+                            <span class="btn-text">Create Account</span>
+                            <div class="loader"></div>
+                        </button>
+                        <div id="form-message" class="form-message"></div>
+                    </form>
+                    <div class="login-hint">
+                        Already have an account? Use your credentials directly in the Claude Desktop config — no login page needed.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9. Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <a href="#" class="logo">MEMORYLAYER</a>
+                <div class="footer-links">
+                    <a href="https://github.com/MainHuAj/memory" target="_blank" rel="noopener">GitHub</a>
+                    <a href="#setup">Setup Guide</a>
+                    <a href="#signup">Sign Up</a>
+                </div>
+                <div style="color: #4b5563; font-weight: 500;">Built by Abhinav Bhatera · Open Source</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Hamburger Menu
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
+
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Smooth Scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    navLinks.classList.remove('active');
+                }
+            });
+        });
+
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in-up').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Tabs functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabsContainer = btn.closest('.tabs');
+                
+                tabsContainer.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                tabsContainer.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                const targetId = btn.getAttribute('data-target');
+                tabsContainer.querySelector('#' + targetId).classList.add('active');
+            });
+        });
+
+        // Copy functionality
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const codeContainer = btn.closest('.code-container');
+                const codeBlock = codeContainer.querySelector('code');
+                const codeContent = codeBlock.textContent;
+                
+                navigator.clipboard.writeText(codeContent).then(() => {
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                });
+            });
+        });
+
+        // Signup form handling
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = e.target.querySelector('button');
+            const loader = btn.querySelector('.loader');
+            const btnText = btn.querySelector('.btn-text');
+            const msg = document.getElementById('form-message');
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            btn.disabled = true;
+            loader.style.display = 'block';
+            btnText.style.display = 'none';
+            msg.style.display = 'none';
+            msg.className = 'form-message';
+            
+            try {
+                const response = await fetch('https://memory-production-d533.up.railway.app/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (response.ok) {
+                    msg.textContent = '✓ Account created! Now go to Step 4 in the setup guide above and enter this exact email and password in your Claude Desktop config.';
+                    msg.classList.add('success');
+                    e.target.reset();
+                } else {
+                    let errorMessage = 'An error occurred during signup.';
+                    try {
+                        const data = await response.json();
+                        errorMessage = data.detail || errorMessage;
+                    } catch (e) {
+                        // ignore json parse error
+                    }
+                    msg.textContent = errorMessage;
+                    msg.classList.add('error');
+                }
+            } catch (error) {
+                msg.textContent = 'Network error. Please try again later.';
+                msg.classList.add('error');
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+                btnText.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

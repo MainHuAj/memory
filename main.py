@@ -7,10 +7,19 @@ from typing import Union
 from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from auth import get_current_user,supabase
+from fastapi.middleware.cors import CORSMiddleware
 security = HTTPBearer()
 
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class StoreRequest(BaseModel):
     text: str = Field(..., min_length=10, max_length=50000)

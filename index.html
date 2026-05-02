@@ -1224,6 +1224,7 @@
                 });
                 
                 if (response.ok) {
+                    msg.style.display = 'block';
                     msg.textContent = '✓ Account created! Now go to Step 4 in the setup guide above and enter this exact email and password in your Claude Desktop config.';
                     msg.classList.add('success');
                     e.target.reset();

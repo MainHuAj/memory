@@ -1004,41 +1004,9 @@
                         <p>Paste this into your <code>claude_desktop_config.json</code>. Replace <code>/path/to/mcp_server.py</code> with the actual full path of the file you downloaded in Step 2.Paste the full python path in "command". 
                             To find the python path write in terminal <code>which python</code> this will give you the full python path<div class=""></div> Use the exact email and password you signed up with.</p>
                         
-                        <div class="tabs">
-                            <div class="tab-buttons">
-                                <button class="tab-btn active" data-target="config-mac">macOS (uv)</button>
-                                <button class="tab-btn" data-target="config-all">All platforms (python)</button>
-                            </div>
-                            
-                            <div class="tab-content active" id="config-mac">
-                                <div class="code-container">
-                                    <button class="copy-btn">Copy</button>
-                                    <pre><code>{
-  "mcpServers": {
-    "Memory-Layer": {
-      "command": "/Library/Frameworks/Python.framework/Versions/3.13/bin/uv",
-      "args": [
-        "run", "--with", "fastmcp",
-        "--with", "requests",
-        "--with", "python-dotenv",
-        "fastmcp", "run",
-        "/path/to/mcp_server.py"
-      ],
-      "env": {
-        "MEMORY_EMAIL": "your@email.com",
-        "MEMORY_PASSWORD": "yourpassword",
-        "RAILWAY_URL": "https://memory-production-d533.up.railway.app"
-      }
-    }
-  }
-}</code></pre>
-                                </div>
-                            </div>
-                            
-                            <div class="tab-content" id="config-all">
-                                <div class="code-container">
-                                    <button class="copy-btn">Copy</button>
-                                    <pre><code>{
+                        <div class="code-container">
+                            <button class="copy-btn">Copy</button>
+                            <pre><code>{
   "mcpServers": {
     "Memory-Layer": {
       "command": "python",
@@ -1051,12 +1019,10 @@
     }
   }
 }</code></pre>
-                                </div>
-                            </div>
                         </div>
                         
                         <p class="step-note">Replace <code>/path/to/mcp_server.py</code> with the actual full file path where you saved mcp_server.py in Step 2. For example: <code>/Users/yourname/Documents/mcp_server.py</code> on Mac or <code>C:\Users\yourname\Documents\mcp_server.py</code> on Windows.</p>
-                        <p class="step-note">The uv option automatically installs all dependencies. If using the python option, you must install dependencies first by running: <code>pip install fastmcp requests python-dotenv</code></p>
+                        <p class="step-note">You must install dependencies first by running: <code>pip install fastmcp requests python-dotenv</code></p>
                     </div>
                 </div>
 
